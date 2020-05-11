@@ -1,5 +1,5 @@
 main: main.cpp tensorflow/tensorflow/lite/tools/make/gen/linux_x86_64/lib/libtensorflow-lite.a
-	$(CXX) -o $@ -g -Itensorflow -Itensorflow/tensorflow/lite/tools/make/downloads/absl -Itensorflow/tensorflow/lite/tools/make/downloads/flatbuffers/include -pthread $?
+	$(CXX) -o $@ $^ -g -Itensorflow -Itensorflow/tensorflow/lite/tools/make/downloads/absl -Itensorflow/tensorflow/lite/tools/make/downloads/flatbuffers/include -pthread 
 		
 tensorflow/tensorflow/lite/tools/make/Makefile:
 	git submodule update --init
