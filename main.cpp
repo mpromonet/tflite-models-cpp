@@ -26,7 +26,7 @@ void printOutput(std::unique_ptr<tflite::Interpreter> & interpreter, int idx) {
 		printf("x");
 	}
   }	  
-  printf("\n");
+  printf(" %s\n",TfLiteTypeGetName(interpreter->tensor(output_idx)->type));  
   
   float* output = interpreter->typed_output_tensor<float>(idx);
   for (int i = 0; i < totalsize; ++i) {
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
   int wanted_channels = dims->data[3];
   
   printf("%dx%dx%d ",wanted_height,wanted_width,wanted_channels);
-  printf("%s \n",TfLiteTypeGetName(interpreter->tensor(input_idx)->type));
+  printf("%s\n",TfLiteTypeGetName(interpreter->tensor(input_idx)->type));
   switch (interpreter->tensor(input_idx)->type) {
 	case kTfLiteUInt8:
 	{
