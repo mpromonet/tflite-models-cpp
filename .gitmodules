@@ -1,3 +1,6 @@
 [submodule "tensorflow"]
 	path = tensorflow
 	url = https://github.com/tensorflow/tensorflow
+[submodule "libyuv"]
+	path = libyuv
+	url = https://github.com/webrtc-uwp/libyuv
