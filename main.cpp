@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 #include "tensorflow/lite/interpreter.h"
 #include "tensorflow/lite/kernels/register.h"
 #include "tensorflow/lite/model.h"
@@ -14,7 +15,7 @@
 
 void printOutput(std::unique_ptr<tflite::Interpreter> & interpreter, int idx) {
   int output_idx = interpreter->outputs()[idx];
-  printf("output_idx:%d\n",output_idx);
+  printf("output_idx:%d ",output_idx);
   
   TfLiteIntArray* odims = interpreter->tensor(output_idx)->dims;
   int size = odims->size;
@@ -35,8 +36,8 @@ void printOutput(std::unique_ptr<tflite::Interpreter> & interpreter, int idx) {
 }
   
 int main(int argc, char* argv[]) {
-  if (argc != 2) {
-    fprintf(stderr, "minimal <tflite model>\n");
+  if (argc != 3) {
+    fprintf(stderr, "main <tflite model> <file>\n");
     return 1;
   } 
   const char* filename = argv[1];
@@ -86,16 +87,25 @@ int main(int argc, char* argv[]) {
 	break;
 	case kTfLiteFloat32:
 	{
-	  float* input = interpreter->typed_input_tensor<float>(input_idx);
-	  for (int i = 0; i < wanted_height; ++i) {
-	    for (int j = 0; j < wanted_width; j++) {
-			for (int k = 0; k< wanted_channels; k++) {
-				*(input) = 0.0;
-				input++;
+		float* input = interpreter->typed_input_tensor<float>(input_idx);
+		std::ifstream is (argv[2]);
+		if (is)
+		{  
+			printf("%s openned\n", argv[2]);
+			float c = 0.0;
+			for (int i = 0; i < wanted_height; ++i) {
+				for (int j = 0; j < wanted_width; j++) {
+					for (int k = 0; k< wanted_channels; k++) {
+						is.read(reinterpret_cast<char*>(&c), sizeof(float));
+						if (is) {
+							*(input) = c;
+							input++;
+						}
+					}
+				}
 			}
-	    }
-	  }
-	  printf("nb elem:%ld\n",(input- interpreter->typed_input_tensor<float>(input_idx)));
+		}
+		printf("nb elem:%ld\n",(input- interpreter->typed_input_tensor<float>(input_idx)));
 	}
 	break;
   }
