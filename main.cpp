@@ -93,102 +93,99 @@ int main(int argc, char *argv[])
 
   printf("%dx%dx%d ", wanted_height, wanted_width, wanted_channels);
   printf("%s\n", TfLiteTypeGetName(interpreter->tensor(input_idx)->type));
-  switch (interpreter->tensor(input_idx)->type)
-  {
-  case kTfLiteUInt8:
-  {
-    std::ifstream is (argv[2]);
-    std::string buffer((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
-    int32_t width = 0;
-    int32_t height = 0;
-    if (libyuv::MJPGSize((const uint8_t*)buffer.c_str(), buffer.size(), &width, &height) == 0) {
-      printf("size:%dx%d\n", width, height);
 
-      int stride_y = width;
-      int stride_uv = (width + 1) / 2;
+  std::ifstream is (argv[2]);
+  std::string buffer((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
+  int32_t width = 0;
+  int32_t height = 0;
+  if (libyuv::MJPGSize((const uint8_t*)buffer.c_str(), buffer.size(), &width, &height) == 0) {
+    printf("size:%dx%d\n", width, height);
 
-      int imagesize = width*height*3/2;
-      uint8_t image[imagesize];
+    int stride_y = width;
+    int stride_uv = (width + 1) / 2;
 
-      uint8_t * buffer_y = (uint8_t *)&image;
-      uint8_t * buffer_u = buffer_y + width*height;
-      uint8_t * buffer_v = buffer_u + width*height/4;
+    int imagesize = width*height*3/2;
+    uint8_t image[imagesize];
 
-      libyuv::ConvertToI420((const uint8_t*)buffer.c_str(), buffer.size(),
-                                                    buffer_y, stride_y,
-                                                    buffer_u, stride_uv,
-                                                    buffer_v, stride_uv,
-                                                    0, 0,
-                                                    width, height,
-                                                    width, height,
-                                                    libyuv::kRotate0, ::libyuv::FOURCC_MJPG);
+    uint8_t * buffer_y = (uint8_t *)&image;
+    uint8_t * buffer_u = buffer_y + width*height;
+    uint8_t * buffer_v = buffer_u + width*height/4;
+
+    libyuv::ConvertToI420((const uint8_t*)buffer.c_str(), buffer.size(),
+                                                  buffer_y, stride_y,
+                                                  buffer_u, stride_uv,
+                                                  buffer_v, stride_uv,
+                                                  0, 0,
+                                                  width, height,
+                                                  width, height,
+                                                  libyuv::kRotate0, ::libyuv::FOURCC_MJPG);
 
 
-      int dst_sample_size = width*height*4;                                             
-      uint8_t  dst_frame[dst_sample_size];
-      libyuv::ConvertFromI420(buffer_y, stride_y,
-                                    buffer_u, stride_uv,
-                                    buffer_v, stride_uv,
-                                    (uint8_t *)&dst_frame, 0,
-                                    width, height,
-                                    libyuv::FOURCC_RGBA);
+    int dst_sample_size = width*height*4;                                             
+    uint8_t  dst_frame[dst_sample_size];
+    libyuv::ConvertFromI420(buffer_y, stride_y,
+                                  buffer_u, stride_uv,
+                                  buffer_v, stride_uv,
+                                  (uint8_t *)&dst_frame, 0,
+                                  width, height,
+                                  libyuv::FOURCC_RGBA);
 
-      int scale_sample_size = wanted_width*wanted_height*4; 
-      uint8_t scaled_frame[scale_sample_size];
-      libyuv::ScalePlane(dst_frame,
-                width*4,
-                width*4,
-                height,
-                (uint8_t *)&scaled_frame,
-                wanted_width*4,
-                wanted_width*4,
-                wanted_height,
-                libyuv::kFilterBox);                                    
+    int scale_sample_size = wanted_width*wanted_height*4; 
+    uint8_t scaled_frame[scale_sample_size];
+    libyuv::ScalePlane(dst_frame,
+              width*4,
+              width*4,
+              height,
+              (uint8_t *)&scaled_frame,
+              wanted_width*4,
+              wanted_width*4,
+              wanted_height,
+              libyuv::kFilterBox);                                    
 
-      std::ofstream os2("scaled.rgba");
-      os2.write((const char*)&scaled_frame, scale_sample_size);
+    std::ofstream os2("scaled.rgba");
+    os2.write((const char*)&scaled_frame, scale_sample_size);
 
-      uint8_t *input = interpreter->typed_input_tensor<uint8_t>(0);
-      for (int i = 0; i < wanted_height; ++i)
-      {
-        for (int j = 0; j < wanted_width; j++)
-        {
-          for (int k = 0; k < wanted_channels; k++)
-          {
-            *(input) = scaled_frame[4*(i*wanted_width+j)+k];
-            input++;
-          }
-        }
-      }
-    }
-  }
-  break;
-  case kTfLiteFloat32:
-  {
-    float *input = interpreter->typed_input_tensor<float>(0);
-    std::ifstream is(argv[2]);
-    if (is)
+    switch (interpreter->tensor(input_idx)->type)
     {
-      printf("%s openned\n", argv[2]);
-      float c = 0.0;
-      for (int i = 0; i < wanted_height; ++i)
+      case kTfLiteUInt8:
       {
-        for (int j = 0; j < wanted_width; j++)
+        uint8_t *input = interpreter->typed_input_tensor<uint8_t>(0);
+        for (int i = 0; i < wanted_height; ++i)
         {
-          for (int k = 0; k < wanted_channels; k++)
+          for (int j = 0; j < wanted_width; j++)
           {
-            is.read(reinterpret_cast<char *>(&c), sizeof(float));
-            if (is)
+            for (int k = 0; k < wanted_channels; k++)
             {
-              *(input) = c;
+              *(input) = scaled_frame[4*(i*wanted_width+j)+k];
               input++;
             }
           }
         }
       }
+      break;
+      case kTfLiteFloat32:
+      {
+        printf("%d %d %d %d\n", dst_frame[0], dst_frame[1], dst_frame[2], dst_frame[3]);
+        float *input = interpreter->typed_input_tensor<float>(0);
+        for (int i = 0; i < wanted_height; ++i)
+        {
+          for (int j = 0; j < wanted_width; j++)
+          {
+            float c = 0.0;
+            for (int k = wanted_channels; k < 4; k++)
+            {
+              c += 1.0*(scaled_frame[4*(i*wanted_width+j)+k])/255.0;
+            }
+            for (int k = 0; k < wanted_channels; k++)
+            {
+              *(input) = 1.0*(scaled_frame[4*(i*wanted_width+j)+k])/255.0*c/(4-wanted_channels);
+              input++;
+            }
+          }
+        }
+      }
+      break;
     }
-  }
-  break;
   }
 
   // Run inference
