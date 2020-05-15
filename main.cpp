@@ -123,12 +123,16 @@ int main(int argc, char *argv[])
 
     int dst_sample_size = width*height*4;                                             
     uint8_t  dst_frame[dst_sample_size];
+    uint32_t format = libyuv::FOURCC_ABGR;
+    if (wanted_channels == 1) {
+      format = libyuv::FOURCC_I400;
+    }    
     libyuv::ConvertFromI420(buffer_y, stride_y,
                                   buffer_u, stride_uv,
                                   buffer_v, stride_uv,
                                   (uint8_t *)&dst_frame, 0,
                                   width, height,
-                                  libyuv::FOURCC_ABGR);
+                                  format);
 
     std::ofstream os1("convert.rgba");
     os1.write((const char*)&dst_frame, dst_sample_size);
@@ -173,12 +177,8 @@ int main(int argc, char *argv[])
         {
           for (int j = 0; j < wanted_width; j++)
           {
-            float c = 0.0;
             if (wanted_channels == 1) {
-              for (int k = 0; k < 3; k++) {
-                c += scaled_frame[4*(i*wanted_width+j)+k];
-              }
-              *(input) = 1.0*c/3.0;
+              *(input) = 1.0*scaled_frame[i*wanted_width+j];
               input++;
             } else {
               for (int k = 0; k < wanted_channels; k++) {
