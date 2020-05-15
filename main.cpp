@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
     int dst_sample_size = wanted_width*wanted_height*4;                                             
     uint8_t  dst_frame[dst_sample_size];
-    uint32_t format = libyuv::FOURCC_24BG;
+    uint32_t format = libyuv::FOURCC_RGB3;
     if (wanted_channels == 1) {
       format = libyuv::FOURCC_I400;
     }    
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
           {
             for (int k = 0; k < wanted_channels; k++)
             {
-              *(input) = dst_frame[4*(i*wanted_width+j)+k];
+              *(input) = dst_frame[3*(i*wanted_width+j)+k];
               input++;
             }
           }
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
               input++;
             } else {
               for (int k = 0; k < wanted_channels; k++) {
-                *(input) = 1.0*(scaled_frame[4*(i*wanted_width+j)+k]);
+                *(input) = 1.0*(scaled_frame[3*(i*wanted_width+j)+k]);
                 input++;
               }
             }
