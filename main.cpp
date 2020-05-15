@@ -101,9 +101,6 @@ int main(int argc, char *argv[])
   if (libyuv::MJPGSize((const uint8_t*)buffer.c_str(), buffer.size(), &width, &height) == 0) {
     printf("size:%dx%d\n", width, height);
 
-    int stride_y = width;
-    int stride_uv = (width + 1) / 2;
-
     int imagesize = width*height*3/2;
     uint8_t image[imagesize];
 
@@ -112,45 +109,49 @@ int main(int argc, char *argv[])
     uint8_t * buffer_v = buffer_u + width*height/4;
 
     libyuv::ConvertToI420((const uint8_t*)buffer.c_str(), buffer.size(),
-                                                  buffer_y, stride_y,
-                                                  buffer_u, stride_uv,
-                                                  buffer_v, stride_uv,
+                                                  buffer_y, width,
+                                                  buffer_u, (width + 1) / 2,
+                                                  buffer_v, (width + 1) / 2,
                                                   0, 0,
                                                   width, height,
                                                   width, height,
                                                   libyuv::kRotate0, ::libyuv::FOURCC_MJPG);
 
+    int scale_sample_size = wanted_width*wanted_height*3/2; 
+    uint8_t scaled_frame[scale_sample_size];
+    uint8_t * dest_y = (uint8_t *)&scaled_frame;
+    uint8_t * dest_u = dest_y + wanted_width*wanted_height;
+    uint8_t * dest_v = dest_u + wanted_width*wanted_height/4;
 
-    int dst_sample_size = width*height*4;                                             
+    libyuv::I420Scale(buffer_y, width,
+                      buffer_u, (width + 1) / 2,
+                      buffer_v, (width + 1) / 2,
+                      width, height,
+                      dest_y, wanted_width,
+                      dest_u, (wanted_width+1)/2,
+                      dest_v, (wanted_width+1)/2,
+                      wanted_width, wanted_height,
+                      libyuv::kFilterBox);    
+
+    std::ofstream os1("scaled.yuv");
+    os1.write((const char*)scaled_frame, scale_sample_size);
+
+    int dst_sample_size = wanted_width*wanted_height*4;                                             
     uint8_t  dst_frame[dst_sample_size];
-    uint32_t format = libyuv::FOURCC_ABGR;
+    uint32_t format = libyuv::FOURCC_24BG;
     if (wanted_channels == 1) {
       format = libyuv::FOURCC_I400;
     }    
-    libyuv::ConvertFromI420(buffer_y, stride_y,
-                                  buffer_u, stride_uv,
-                                  buffer_v, stride_uv,
+    libyuv::ConvertFromI420(dest_y, wanted_width,
+                                  dest_u, (wanted_width+1)/2,
+                                  dest_v, (wanted_width+1)/2,
                                   (uint8_t *)&dst_frame, 0,
-                                  width, height,
+                                  wanted_width, wanted_height,
                                   format);
 
-    std::ofstream os1("convert.rgba");
-    os1.write((const char*)&dst_frame, dst_sample_size);
-
-    int scale_sample_size = wanted_width*wanted_height*4; 
-    uint8_t scaled_frame[scale_sample_size];
-    libyuv::ScalePlane(dst_frame,
-              width*4,
-              width*4,
-              height,
-              (uint8_t *)&scaled_frame,
-              wanted_width*4,
-              wanted_width*4,
-              wanted_height,
-              libyuv::kFilterBox);                                    
-
     std::ofstream os2("scaled.rgba");
-    os2.write((const char*)&scaled_frame, scale_sample_size);
+    os2 << "P6 " << wanted_width << " " << wanted_height << " 255\n";
+    os2.write((const char*)dst_frame, dst_sample_size);
 
     switch (interpreter->tensor(input_idx)->type)
     {
@@ -163,7 +164,7 @@ int main(int argc, char *argv[])
           {
             for (int k = 0; k < wanted_channels; k++)
             {
-              *(input) = scaled_frame[4*(i*wanted_width+j)+k];
+              *(input) = dst_frame[4*(i*wanted_width+j)+k];
               input++;
             }
           }
