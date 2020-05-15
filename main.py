@@ -20,11 +20,20 @@ if __name__ == '__main__':
 
     height = input_details[0]['shape'][1]
     width = input_details[0]['shape'][2]
+    channels = input_details[0]['shape'][3]
+
     img = Image.open(args.image)
-    print(img)
     img = img.resize((width, height))
+    if channels == 3:
+        img = img.convert("RGB")
+    if channels == 1:
+        img = img.convert("L")
+        img = np.expand_dims(img, axis=-1)
     input_data = np.expand_dims(img, axis=0)
+    if input_details[0]['dtype'] == np.float32:
+       input_data = np.float32(input_data)
     print(np.shape(input_data))
+
     interpreter.set_tensor(input_details[0]['index'], input_data)
 
     interpreter.invoke()
