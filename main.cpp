@@ -128,7 +128,10 @@ int main(int argc, char *argv[])
                                   buffer_v, stride_uv,
                                   (uint8_t *)&dst_frame, 0,
                                   width, height,
-                                  libyuv::FOURCC_RGBA);
+                                  libyuv::FOURCC_ABGR);
+
+    std::ofstream os1("convert.rgba");
+    os1.write((const char*)&dst_frame, dst_sample_size);
 
     int scale_sample_size = wanted_width*wanted_height*4; 
     uint8_t scaled_frame[scale_sample_size];
@@ -165,21 +168,23 @@ int main(int argc, char *argv[])
       break;
       case kTfLiteFloat32:
       {
-        printf("%d %d %d %d\n", dst_frame[0], dst_frame[1], dst_frame[2], dst_frame[3]);
         float *input = interpreter->typed_input_tensor<float>(0);
         for (int i = 0; i < wanted_height; ++i)
         {
           for (int j = 0; j < wanted_width; j++)
           {
             float c = 0.0;
-            for (int k = wanted_channels; k < 4; k++)
-            {
-              c += 1.0*(scaled_frame[4*(i*wanted_width+j)+k])/255.0;
-            }
-            for (int k = 0; k < wanted_channels; k++)
-            {
-              *(input) = 1.0*(scaled_frame[4*(i*wanted_width+j)+k])/255.0*c/(4-wanted_channels);
+            if (wanted_channels == 1) {
+              for (int k = 0; k < 3; k++) {
+                c += scaled_frame[4*(i*wanted_width+j)+k];
+              }
+              *(input) = 1.0*c/3.0;
               input++;
+            } else {
+              for (int k = 0; k < wanted_channels; k++) {
+                *(input) = 1.0*(scaled_frame[4*(i*wanted_width+j)+k]);
+                input++;
+              }
             }
           }
         }
