@@ -9,11 +9,16 @@ def load_labels(filename):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('-t', '--tpu', action='store_true', help='enable tpu')
     parser.add_argument('-i', '--image', default='cat.jpg', help='image to process')
     parser.add_argument('-m', '--model_file', default='detect.tflite', help='.tflite model to be executed')
     args = parser.parse_args()
 
-    interpreter = tflite.Interpreter(model_path=args.model_file)
+    if args.tpu:
+        interpreter = tflite.Interpreter(model_path=args.model_file)
+    else:
+        interpreter = tflite.Interpreter(model_path=args.model_file, experimental_delegates=[tflite.load_delegate("libedgetpu.so.1")])
+        
     interpreter.allocate_tensors()
 
     input_details = interpreter.get_input_details()
