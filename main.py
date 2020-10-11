@@ -15,9 +15,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.tpu:
-        interpreter = tflite.Interpreter(model_path=args.model_file)
+        delegate = tflite.load_delegate("libedgetpu.so.1")
+        interpreter = tflite.Interpreter(model_path=args.model_file, experimental_delegates=[delegate])
     else:
-        interpreter = tflite.Interpreter(model_path=args.model_file, experimental_delegates=[tflite.load_delegate("libedgetpu.so.1")])
+        interpreter = tflite.Interpreter(model_path=args.model_file)
         
     interpreter.allocate_tensors()
 
