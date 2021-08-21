@@ -5,19 +5,19 @@ CXX = $(CROSS)g++
 PREFIX?=/usr
 DESTDIR?=$(PREFIX)
 
-CFLAGS += -Itensorflow -Itensorflow/tensorflow/lite/tools/make/downloads/absl -Itensorflow/tensorflow/lite/tools/make/downloads/flatbuffers/include
+CFLAGS += -Itensorflow -Itflite_build/flatbuffers/include/
 CFLAGS += -I libyuv/include -DHAVE_JPEG
-LDFLAGS += -ljpeg
+LDFLAGS += -ljpeg -ldl
 
-main: main.cpp tensorflow/tensorflow/lite/tools/make/gen/linux_x86_64/lib/libtensorflow-lite.a libyuv.a
+main: main.cpp tflite_build/libtensorflow-lite.a tflite_build/_deps/flatbuffers-build/libflatbuffers.a tflite_build/_deps/fft2d-build/libfft2d_fftsg.a tflite_build/_deps/fft2d-build/libfft2d_fftsg2d.a tflite_build/_deps/ruy-build/libruy.a tflite_build/_deps/farmhash-build/libfarmhash.a tflite_build/_deps/xnnpack-build/libXNNPACK.a tflite_build/pthreadpool/libpthreadpool.a tflite_build/cpuinfo/libcpuinfo.a tflite_build/clog/libclog.a libyuv.a
 	$(CXX) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 		
-tensorflow/tensorflow/lite/tools/make/Makefile:
+tflite_build/Makefile:
 	git submodule update --init
+	mkdir tflite_build
 
-tensorflow/tensorflow/lite/tools/make/gen/linux_x86_64/lib/libtensorflow-lite.a: tensorflow/tensorflow/lite/tools/make/Makefile
-	tensorflow/tensorflow/lite/tools/make/download_dependencies.sh
-	tensorflow/tensorflow/lite/tools/make/build_lib.sh
+tflite_build/libtensorflow-lite.a: tflite_build/Makefile
+	cd tensorflow/tensorflow/lite && cmake . && make
 
 libyuv.a:
 	git submodule init libyuv
