@@ -179,11 +179,11 @@ int main(int argc, char *argv[])
           for (int j = 0; j < wanted_width; j++)
           {
             if (wanted_channels == 1) {
-              *(input) = 1.0*scaled_frame[i*wanted_width+j];
+              *(input) = 1.0*dst_frame[i*wanted_width+j];
               input++;
             } else {
               for (int k = 0; k < wanted_channels; k++) {
-                *(input) = 1.0*(scaled_frame[3*(i*wanted_width+j)+k]);
+                *(input) = 1.0*(dst_frame[3*(i*wanted_width+j)+k]);
                 input++;
               }
             }
