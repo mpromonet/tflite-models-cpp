@@ -17,7 +17,7 @@ tflite_build/Makefile:
 	mkdir tflite_build
 
 tflite_build/libtensorflow-lite.a: tflite_build/Makefile
-	cd tensorflow/tensorflow/lite && cmake . && make
+	cd tflite_build && cmake ../tensorflow/tensorflow/lite/c && make
 
 libyuv.a:
 	git submodule init libyuv
